@@ -871,6 +871,9 @@
   </div>
 </footer>
 
+<!-- libs para gerar Pix e QR Code no browser, sem backend -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <!-- ── MODAL PIX ─────────────────────────────────────────────────── -->
 <div id="pix-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
   <div style="background:#1a1a26; border:1px solid rgba(255,92,0,0.3); border-radius:16px; width:100%; max-width:440px; margin:1rem; overflow:hidden; position:relative;">
@@ -884,18 +887,12 @@
       <button id="fechar-modal" style="background:none; border:none; color:#8888aa; font-size:1.5rem; cursor:pointer; line-height:1;">✕</button>
     </div>
 
-    <!-- Carregando -->
-    <div id="etapa-loading" style="padding:3rem 1.8rem; text-align:center;">
-      <div style="font-size:2.5rem; margin-bottom:1rem; animation: spin 1s linear infinite; display:inline-block;">⏳</div>
-      <p style="font-size:0.9rem; font-weight:700; color:#8888aa;">Gerando QR Code...</p>
-    </div>
-
     <!-- QR Code -->
-    <div id="etapa-qr" style="display:none; padding:2rem 1.8rem; text-align:center;">
+    <div id="etapa-qr" style="padding:2rem 1.8rem; text-align:center;">
       <p style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#ff5c00; margin-bottom:1rem;">Escaneie com o app do seu banco</p>
 
       <div style="background:#fff; border-radius:12px; padding:12px; display:inline-block; margin-bottom:1.2rem;">
-        <canvas id="qr-canvas" width="180" height="180"></canvas>
+        <div id="qr-canvas"></div>
       </div>
 
       <p style="font-size:0.8rem; font-weight:700; color:#8888aa; margin-bottom:0.5rem;">Ou copie o código Pix:</p>
@@ -909,7 +906,7 @@
       </div>
 
       <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:1rem;">
-        <p style="font-size:0.8rem; font-weight:700; color:#8888aa; line-height:1.6;">
+        <p style="font-size:0.8rem; font-weight:700; color:#8888aa; line-height:1.7;">
           💜 O pagamento cai direto no <strong style="color:#f0f0f8;">Nubank</strong><br/>
           📧 Após pagar, envie o comprovante para:<br/>
           <strong style="color:#ff5c00;">contato@metodoprojeto.com.br</strong>
@@ -919,24 +916,50 @@
       <p style="font-size:0.7rem; color:#8888aa; font-weight:600; margin-top:1rem;">🔒 Pix seguro · Valor fixo de R$197,00</p>
     </div>
 
-    <!-- Erro -->
-    <div id="etapa-erro" style="display:none; padding:2.5rem 1.8rem; text-align:center;">
-      <div style="font-size:2.5rem; margin-bottom:1rem;">❌</div>
-      <p style="font-size:0.95rem; font-weight:700; color:#f0f0f8; margin-bottom:0.5rem;">Não foi possível gerar o Pix</p>
-      <p style="font-size:0.8rem; color:#8888aa; font-weight:600; margin-bottom:1.5rem;" id="erro-msg"></p>
-      <button id="btn-tentar-novamente"
-        style="background:#ff5c00; color:#fff; border:none; border-radius:6px; padding:0.8rem 2rem; font-family:'Nunito',sans-serif; font-weight:800; cursor:pointer;">
-        Tentar novamente
-      </button>
-    </div>
-
   </div>
 </div>
 
 <script>
-  const BACKEND_URL = "http://localhost:3000"; // Troque pelo seu domínio quando hospedar
+  // ── Gera o payload Pix BR Code (padrão BACEN EMV) sem precisar de backend
+  function gerarBRCode() {
+    const chave    = "07147590317";
+    const nome     = "METODO PROJETO";
+    const cidade   = "FORTALEZA";
+    const valor    = "197.00";
+    const desc     = "MetodoPROJETO";
+
+    function campo(id, valor) {
+      const v = String(valor);
+      return id + String(v.length).padStart(2, '0') + v;
+    }
+
+    const merchantAccount = campo("00", "BR.GOV.BCB.PIX") + campo("01", chave);
+    const payload =
+      campo("00", "01") +
+      campo("26", merchantAccount) +
+      campo("52", "0000") +
+      campo("53", "986") +
+      campo("54", valor) +
+      campo("58", "BR") +
+      campo("59", nome.slice(0, 25)) +
+      campo("60", cidade.slice(0, 15)) +
+      campo("62", campo("05", desc.slice(0, 25))) +
+      "6304";
+
+    // CRC16-CCITT
+    let crc = 0xFFFF;
+    for (let i = 0; i < payload.length; i++) {
+      crc ^= payload.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+      }
+    }
+    return payload + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+  }
 
   // ── Abre o modal ao clicar em qualquer botão de compra
+  let qrGerado = false;
+
   document.querySelectorAll('.btn-main, .card-btn, .cta-main-btn, .nav-cta').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -945,12 +968,25 @@
   });
 
   function abrirModal() {
-    // Reseta para estado de loading
-    document.getElementById('etapa-loading').style.display = 'block';
-    document.getElementById('etapa-qr').style.display      = 'none';
-    document.getElementById('etapa-erro').style.display    = 'none';
-    document.getElementById('pix-modal').style.display     = 'flex';
-    gerarPix();
+    document.getElementById('pix-modal').style.display = 'flex';
+
+    if (!qrGerado) {
+      const brcode = gerarBRCode();
+      document.getElementById('pix-copia-cola').value = brcode;
+
+      // Gera QR Code dentro da div
+      document.getElementById('qr-canvas').innerHTML = '';
+      new QRCode(document.getElementById('qr-canvas'), {
+        text: brcode,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      qrGerado = true;
+    }
   }
 
   // ── Fecha o modal
@@ -960,30 +996,6 @@
   document.getElementById('pix-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
   });
-  document.getElementById('btn-tentar-novamente').addEventListener('click', abrirModal);
-
-  // ── Gerar QR Code
-  async function gerarPix() {
-    try {
-      const res  = await fetch(`${BACKEND_URL}/criar-pix`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro || 'Erro desconhecido.');
-
-      // Desenha o QR Code no canvas usando a lib qrcode
-      const QRCode = (await import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')).default;
-      const canvas = document.getElementById('qr-canvas');
-      await QRCode.toCanvas(canvas, data.brcode, { width: 180, margin: 1, color: { dark: '#000', light: '#fff' } });
-
-      document.getElementById('pix-copia-cola').value = data.brcode;
-      document.getElementById('etapa-loading').style.display = 'none';
-      document.getElementById('etapa-qr').style.display      = 'block';
-
-    } catch (err) {
-      document.getElementById('etapa-loading').style.display = 'none';
-      document.getElementById('erro-msg').textContent        = err.message;
-      document.getElementById('etapa-erro').style.display    = 'block';
-    }
-  }
 
   // ── Copiar código Pix
   document.getElementById('btn-copiar').addEventListener('click', () => {

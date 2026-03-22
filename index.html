@@ -597,7 +597,7 @@
         </div>
       </div>
       <div class="hero-actions">
-        <a href="#comprar" class="btn-main">🚀 Quero Começar Agora — R$197</a>
+        <a href="#comprar" class="btn-main">🚀 Quero Começar Agora — R$0,01</a>
         <p class="btn-guarantee">🔒 Compra segura · Acesso imediato</p>
       </div>
     </div>
@@ -610,7 +610,7 @@
       </div>
       <div class="card-body">
         <p class="card-price-old">De R$497</p>
-        <div class="card-price"><sub>R$</sub>197</div>
+        <div class="card-price"><sub>R$</sub>0,01</div>
         <p class="card-price-note">ou 12x de R$19,70 no cartão</p>
         <ul class="card-features">
           <li><span>✓</span> 8 módulos completos</li>
@@ -814,7 +814,7 @@
 
   <div class="cta-price-wrap">
     <p class="cta-old">De R$497</p>
-    <div class="cta-price"><sub>R$</sub>197</div>
+    <div class="cta-price"><sub>R$</sub>0,01</div>
     <p class="cta-installments">ou 12x de R$19,70 no cartão sem juros</p>
   </div>
 
@@ -889,7 +889,7 @@
     <div style="background:rgba(255,92,0,0.1);border-bottom:1px solid rgba(255,92,0,0.2);padding:1.2rem 1.8rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;">
       <div>
         <p id="modal-titulo" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#f0f0f8;letter-spacing:0.05em;">Pague com Pix</p>
-        <p style="font-size:0.75rem;color:#8888aa;font-weight:600;">Método PROJETO — <strong style="color:#ff5c00;">R$ 197,00</strong></p>
+        <p style="font-size:0.75rem;color:#8888aa;font-weight:600;">Método PROJETO — <strong style="color:#ff5c00;">R$ 0,01</strong></p>
       </div>
       <button id="fechar-modal" style="background:none;border:none;color:#8888aa;font-size:1.5rem;cursor:pointer;">✕</button>
     </div>
@@ -904,7 +904,7 @@
         <button id="btn-copiar" style="background:rgba(255,92,0,0.2);border:1px solid rgba(255,92,0,0.4);border-radius:6px;padding:0.7rem 1rem;color:#ff5c00;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer;white-space:nowrap;">Copiar</button>
       </div>
       <button id="btn-ja-paguei" style="width:100%;background:#ff5c00;color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;margin-bottom:0.8rem;">✅ Já realizei o pagamento</button>
-      <p style="font-size:0.7rem;color:#8888aa;font-weight:600;">🔒 Pix seguro · Valor fixo de R$197,00 · Nubank</p>
+      <p style="font-size:0.7rem;color:#8888aa;font-weight:600;">🔒 Pix seguro · Valor fixo de R$0,01 · Nubank</p>
     </div>
 
     <!-- ETAPA 2: Formulário -->
@@ -942,7 +942,7 @@
 
 <script>
   function gerarBRCode() {
-    const chave="07147590317",nome="METODO PROJETO",cidade="FORTALEZA",valor="197.00",desc="MetodoPROJETO";
+    const chave="07147590317",nome="METODO PROJETO",cidade="FORTALEZA",valor="0.01",desc="MetodoPROJETO";
     function campo(id,v){v=String(v);return id+String(v.length).padStart(2,'0')+v;}
     const ma=campo("00","BR.GOV.BCB.PIX")+campo("01",chave);
     const p=campo("00","01")+campo("26",ma)+campo("52","0000")+campo("53","986")+campo("54",valor)+campo("58","BR")+campo("59",nome.slice(0,25))+campo("60",cidade.slice(0,15))+campo("62",campo("05",desc.slice(0,25)))+"6304";
@@ -1008,7 +1008,7 @@
     let t=0;
     while(!window._fbReady&&t++<30)await new Promise(r=>setTimeout(r,200));
     try{
-      await window._add(window._col(window._db,'clientes'),{nome,email,whatsapp:wpp,valor:'R$197,00',curso:'Método PROJETO',data:window._ts()});
+      await window._add(window._col(window._db,'clientes'),{nome,email,whatsapp:wpp,valor:'R$0,01',curso:'Método PROJETO',data:window._ts()});
       mostrarEtapa('etapa-ok');
       document.getElementById('modal-titulo').textContent='Tudo Certo!';
     }catch(err){

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Admin — Método PROJETO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--orange:#ff5c00;--green:#00e676;--text:#f0f0f8;--muted:#8888aa;--border:rgba(255,255,255,0.08);}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+    /* LOGIN */
+    #tela-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;}
+    .login-box{background:var(--card);border:1px solid rgba(255,92,0,0.3);border-radius:16px;padding:3rem 2.5rem;width:100%;max-width:400px;text-align:center;}
+    .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;margin-bottom:0.3rem;}
+    .login-logo span{color:var(--orange);}
+    .login-sub{font-size:0.8rem;color:var(--muted);font-weight:600;margin-bottom:2rem;}
+    .login-label{font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:var(--orange);display:block;text-align:left;margin-bottom:0.4rem;}
+    .login-input{width:100%;background:#12121a;border:1px solid var(--border);border-radius:6px;padding:0.9rem 1rem;color:var(--text);font-family:'Nunito',sans-serif;font-size:1rem;outline:none;margin-bottom:1.2rem;}
+    .login-input:focus{border-color:rgba(255,92,0,0.5);}
+    .login-btn{width:100%;background:var(--orange);color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;transition:opacity 0.2s;}
+    .login-btn:hover{opacity:0.9;}
+    .login-erro{color:var(--orange);font-size:0.8rem;font-weight:700;margin-top:1rem;display:none;}
+
+    /* PAINEL */
+    #tela-painel{display:none;}
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+    .topbar-logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;}
+    .topbar-logo span{color:var(--orange);}
+    .topbar-right{display:flex;align-items:center;gap:1.5rem;}
+    .badge-total{background:rgba(255,92,0,0.15);border:1px solid rgba(255,92,0,0.3);border-radius:100px;padding:0.3rem 1rem;font-size:0.8rem;font-weight:800;color:var(--orange);}
+    .logout-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:0.4rem 1rem;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;transition:border-color 0.2s;}
+    .logout-btn:hover{border-color:var(--orange);color:var(--orange);}
+
+    .painel-body{padding:2rem;}
+    .painel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:gap;}
+    .painel-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.05em;}
+    .search-input{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:0.6rem 1rem;color:var(--text);font-family:'Nunito',sans-serif;font-size:0.9rem;outline:none;width:250px;}
+    .search-input:focus{border-color:rgba(255,92,0,0.4);}
+
+    /* STATS */
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center;}
+    .stat-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--orange);line-height:1;}
+    .stat-label{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-top:0.3rem;}
+
+    /* TABELA */
+    .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+    .table-head{display:grid;grid-template-columns:2fr 2fr 1.5fr 1.5fr 1fr;padding:0.8rem 1.5rem;background:rgba(255,92,0,0.08);border-bottom:1px solid var(--border);}
+    .th{font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:var(--orange);}
+    .table-body{max-height:60vh;overflow-y:auto;}
+    .table-row{display:grid;grid-template-columns:2fr 2fr 1.5fr 1.5fr 1fr;padding:1rem 1.5rem;border-bottom:1px solid var(--border);align-items:center;transition:background 0.2s;}
+    .table-row:last-child{border-bottom:none;}
+    .table-row:hover{background:rgba(255,255,255,0.02);}
+    .td{font-size:0.88rem;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:0.5rem;}
+    .td.muted{color:var(--muted);font-size:0.8rem;}
+    .wpp-btn{background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:6px;padding:0.3rem 0.7rem;color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:0.75rem;cursor:pointer;text-decoration:none;display:inline-block;transition:background 0.2s;}
+    .wpp-btn:hover{background:rgba(0,230,118,0.2);}
+
+    .loading{text-align:center;padding:3rem;color:var(--muted);font-weight:700;}
+    .empty{text-align:center;padding:3rem;color:var(--muted);}
+    .empty-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+
+    @media(max-width:700px){
+      .stats-row{grid-template-columns:1fr 1fr;}
+      .table-head,.table-row{grid-template-columns:2fr 1.5fr 1fr;}
+      .th:nth-child(2),.td:nth-child(2),
+      .th:nth-child(4),.td:nth-child(4){display:none;}
+      .search-input{width:100%;}
+      .painel-header{flex-direction:column;gap:1rem;align-items:flex-start;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TELA DE LOGIN ── -->
+<div id="tela-login">
+  <div class="login-box">
+    <div class="login-logo">PROJETO<span>.</span></div>
+    <p class="login-sub">Painel Administrativo</p>
+    <label class="login-label">Senha</label>
+    <input id="senha-input" type="password" class="login-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="login-btn" onclick="entrar()">Entrar no Painel</button>
+    <p id="login-erro" class="login-erro">❌ Senha incorreta.</p>
+  </div>
+</div>
+
+<!-- ── PAINEL ── -->
+<div id="tela-painel">
+  <div class="topbar">
+    <div class="topbar-logo">PROJETO<span>.</span> <span style="font-size:0.9rem;font-weight:700;color:var(--muted);font-family:'Nunito',sans-serif;">Admin</span></div>
+    <div class="topbar-right">
+      <span class="badge-total" id="badge-total">0 clientes</span>
+      <button class="logout-btn" onclick="sair()">Sair</button>
+    </div>
+  </div>
+
+  <div class="painel-body">
+    <div class="painel-header">
+      <h1 class="painel-title">Clientes Cadastrados</h1>
+      <input type="text" class="search-input" id="busca" placeholder="🔍  Buscar por nome, e-mail ou WhatsApp..." oninput="filtrar()">
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">—</div>
+        <div class="stat-label">Total de Clientes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-hoje">—</div>
+        <div class="stat-label">Cadastros Hoje</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-faturamento">—</div>
+        <div class="stat-label">Faturamento Total</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <div class="th">Nome</div>
+        <div class="th">E-mail</div>
+        <div class="th">WhatsApp</div>
+        <div class="th">Data</div>
+        <div class="th">Contato</div>
+      </div>
+      <div class="table-body" id="tabela-body">
+        <div class="loading">⏳ Carregando clientes...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyDTmLtAfc1qNNqTi-LAaTeVm5Eb-GywrwY",
+    authDomain: "projeto-hor.firebaseapp.com",
+    projectId: "projeto-hor",
+    storageBucket: "projeto-hor.firebasestorage.app",
+    messagingSenderId: "1021955246820",
+    appId: "1:1021955246820:web:05ba412bfd0cec48b9baf1"
+  });
+  const db = getFirestore(app);
+
+  // ── SENHA (troque para uma senha forte)
+  const SENHA_ADMIN = "projeto2025";
+
+  let todosClientes = [];
+
+  window.entrar = function() {
+    const senha = document.getElementById('senha-input').value;
+    if (senha === SENHA_ADMIN) {
+      document.getElementById('tela-login').style.display  = 'none';
+      document.getElementById('tela-painel').style.display = 'block';
+      carregarClientes();
+    } else {
+      document.getElementById('login-erro').style.display = 'block';
+    }
+  };
+
+  window.sair = function() {
+    document.getElementById('tela-painel').style.display = 'none';
+    document.getElementById('tela-login').style.display  = 'flex';
+    document.getElementById('senha-input').value = '';
+  };
+
+  async function carregarClientes() {
+    try {
+      const q = query(collection(db, 'clientes'), orderBy('data', 'desc'));
+      const snap = await getDocs(q);
+      todosClientes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      atualizarStats();
+      renderizar(todosClientes);
+    } catch(e) {
+      document.getElementById('tabela-body').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar. Verifique as regras do Firestore.</p></div>';
+    }
+  }
+
+  function atualizarStats() {
+    const total = todosClientes.length;
+    const hoje  = new Date().toDateString();
+    const cadastrosHoje = todosClientes.filter(c => {
+      if (!c.data) return false;
+      return new Date(c.data.seconds * 1000).toDateString() === hoje;
+    }).length;
+
+    document.getElementById('stat-total').textContent    = total;
+    document.getElementById('stat-hoje').textContent     = cadastrosHoje;
+    document.getElementById('stat-faturamento').textContent = `R$${(total * 197).toLocaleString('pt-BR')}`;
+    document.getElementById('badge-total').textContent   = `${total} cliente${total !== 1 ? 's' : ''}`;
+  }
+
+  function renderizar(lista) {
+    const body = document.getElementById('tabela-body');
+    if (lista.length === 0) {
+      body.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Nenhum cliente encontrado.</p></div>';
+      return;
+    }
+
+    body.innerHTML = lista.map(c => {
+      const data = c.data ? new Date(c.data.seconds * 1000).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const wppNum = (c.whatsapp || '').replace(/\D/g, '');
+      const wppLink = wppNum ? `https://wa.me/55${wppNum}?text=Ol%C3%A1%20${encodeURIComponent(c.nome)}%2C%20tudo%20bem%3F%20Vi%20que%20voc%C3%AA%20se%20cadastrou%20no%20M%C3%A9todo%20PROJETO!` : '#';
+      return `
+        <div class="table-row">
+          <div class="td" title="${c.nome||''}">${c.nome || '—'}</div>
+          <div class="td muted" title="${c.email||''}">${c.email || '—'}</div>
+          <div class="td">${c.whatsapp || '—'}</div>
+          <div class="td muted">${data}</div>
+          <div class="td">
+            ${wppNum ? `<a href="${wppLink}" target="_blank" class="wpp-btn">💬 Wpp</a>` : '—'}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.filtrar = function() {
+    const termo = document.getElementById('busca').value.toLowerCase();
+    const filtrado = todosClientes.filter(c =>
+      (c.nome||'').toLowerCase().includes(termo) ||
+      (c.email||'').toLowerCase().includes(termo) ||
+      (c.whatsapp||'').includes(termo)
+    );
+    renderizar(filtrado);
+  };
+</script>
+</body>
+</html>

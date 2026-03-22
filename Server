@@ -1,0 +1,52 @@
+const express = require("express");
+const cors = require("cors");
+const { createStaticPix, hasError } = require("pix-utils");
+
+const app = express();
+app.use(express.json());
+app.use(cors({ origin: "*" })); // Em produção, troque "*" pelo domínio da sua landing page
+
+// ─── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
+const PIX_CHAVE     = "07147590317";   // Sua chave Pix (CPF Nubank)
+const PIX_NOME      = "METODO PROJETO"; // Nome que aparece no app do pagador (máx 25 chars, sem acento)
+const PIX_CIDADE    = "FORTALEZA";      // Sua cidade
+const PIX_VALOR     = 197.00;           // Valor fixo do curso
+const PIX_DESCRICAO = "Metodo PROJETO"; // Descrição (máx 25 chars, sem acento)
+
+// ─── ROTA: GERAR PIX ESTÁTICO ─────────────────────────────────────────────────
+app.post("/criar-pix", (req, res) => {
+  try {
+    const pix = createStaticPix({
+      merchantName:      PIX_NOME,
+      merchantCity:      PIX_CIDADE,
+      pixKey:            PIX_CHAVE,
+      infoAdicional:     PIX_DESCRICAO,
+      transactionAmount: PIX_VALOR,
+    });
+
+    if (hasError(pix)) {
+      return res.status(500).json({ erro: "Erro ao gerar código Pix." });
+    }
+
+    const brCode = pix.toBRCode(); // Código copia-e-cola (funciona em qualquer banco)
+
+    return res.json({
+      brcode: brCode,
+      chave:  PIX_CHAVE,
+      nome:   PIX_NOME,
+      valor:  PIX_VALOR,
+    });
+
+  } catch (err) {
+    console.error("Erro:", err);
+    return res.status(500).json({ erro: "Não foi possível gerar o Pix." });
+  }
+});
+
+// ─── INICIAR SERVIDOR ─────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
+  console.log(`   Chave Pix: ${PIX_CHAVE} (Nubank)`);
+  console.log(`   Valor: R$ ${PIX_VALOR}`);
+});

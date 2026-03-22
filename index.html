@@ -871,8 +871,131 @@
   </div>
 </footer>
 
+<!-- ── MODAL PIX ─────────────────────────────────────────────────── -->
+<div id="pix-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+  <div style="background:#1a1a26; border:1px solid rgba(255,92,0,0.3); border-radius:16px; width:100%; max-width:440px; margin:1rem; overflow:hidden; position:relative;">
+
+    <!-- Cabeçalho -->
+    <div style="background:rgba(255,92,0,0.1); border-bottom:1px solid rgba(255,92,0,0.2); padding:1.2rem 1.8rem; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <p style="font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:#f0f0f8; letter-spacing:0.05em;">Pague com Pix</p>
+        <p style="font-size:0.75rem; color:#8888aa; font-weight:600;">Método PROJETO — <strong style="color:#ff5c00;">R$ 197,00</strong></p>
+      </div>
+      <button id="fechar-modal" style="background:none; border:none; color:#8888aa; font-size:1.5rem; cursor:pointer; line-height:1;">✕</button>
+    </div>
+
+    <!-- Carregando -->
+    <div id="etapa-loading" style="padding:3rem 1.8rem; text-align:center;">
+      <div style="font-size:2.5rem; margin-bottom:1rem; animation: spin 1s linear infinite; display:inline-block;">⏳</div>
+      <p style="font-size:0.9rem; font-weight:700; color:#8888aa;">Gerando QR Code...</p>
+    </div>
+
+    <!-- QR Code -->
+    <div id="etapa-qr" style="display:none; padding:2rem 1.8rem; text-align:center;">
+      <p style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#ff5c00; margin-bottom:1rem;">Escaneie com o app do seu banco</p>
+
+      <div style="background:#fff; border-radius:12px; padding:12px; display:inline-block; margin-bottom:1.2rem;">
+        <canvas id="qr-canvas" width="180" height="180"></canvas>
+      </div>
+
+      <p style="font-size:0.8rem; font-weight:700; color:#8888aa; margin-bottom:0.5rem;">Ou copie o código Pix:</p>
+      <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+        <input id="pix-copia-cola" readonly
+          style="flex:1; background:#12121a; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.7rem 1rem; color:#f0f0f8; font-size:0.7rem; font-family:monospace; outline:none;">
+        <button id="btn-copiar"
+          style="background:rgba(255,92,0,0.2); border:1px solid rgba(255,92,0,0.4); border-radius:6px; padding:0.7rem 1rem; color:#ff5c00; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.8rem; cursor:pointer; white-space:nowrap;">
+          Copiar
+        </button>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:1rem;">
+        <p style="font-size:0.8rem; font-weight:700; color:#8888aa; line-height:1.6;">
+          💜 O pagamento cai direto no <strong style="color:#f0f0f8;">Nubank</strong><br/>
+          📧 Após pagar, envie o comprovante para:<br/>
+          <strong style="color:#ff5c00;">contato@metodoprojeto.com.br</strong>
+        </p>
+      </div>
+
+      <p style="font-size:0.7rem; color:#8888aa; font-weight:600; margin-top:1rem;">🔒 Pix seguro · Valor fixo de R$197,00</p>
+    </div>
+
+    <!-- Erro -->
+    <div id="etapa-erro" style="display:none; padding:2.5rem 1.8rem; text-align:center;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">❌</div>
+      <p style="font-size:0.95rem; font-weight:700; color:#f0f0f8; margin-bottom:0.5rem;">Não foi possível gerar o Pix</p>
+      <p style="font-size:0.8rem; color:#8888aa; font-weight:600; margin-bottom:1.5rem;" id="erro-msg"></p>
+      <button id="btn-tentar-novamente"
+        style="background:#ff5c00; color:#fff; border:none; border-radius:6px; padding:0.8rem 2rem; font-family:'Nunito',sans-serif; font-weight:800; cursor:pointer;">
+        Tentar novamente
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <script>
-  // FAQ toggle
+  const BACKEND_URL = "http://localhost:3000"; // Troque pelo seu domínio quando hospedar
+
+  // ── Abre o modal ao clicar em qualquer botão de compra
+  document.querySelectorAll('.btn-main, .card-btn, .cta-main-btn, .nav-cta').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      abrirModal();
+    });
+  });
+
+  function abrirModal() {
+    // Reseta para estado de loading
+    document.getElementById('etapa-loading').style.display = 'block';
+    document.getElementById('etapa-qr').style.display      = 'none';
+    document.getElementById('etapa-erro').style.display    = 'none';
+    document.getElementById('pix-modal').style.display     = 'flex';
+    gerarPix();
+  }
+
+  // ── Fecha o modal
+  document.getElementById('fechar-modal').addEventListener('click', () => {
+    document.getElementById('pix-modal').style.display = 'none';
+  });
+  document.getElementById('pix-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
+  document.getElementById('btn-tentar-novamente').addEventListener('click', abrirModal);
+
+  // ── Gerar QR Code
+  async function gerarPix() {
+    try {
+      const res  = await fetch(`${BACKEND_URL}/criar-pix`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Erro desconhecido.');
+
+      // Desenha o QR Code no canvas usando a lib qrcode
+      const QRCode = (await import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')).default;
+      const canvas = document.getElementById('qr-canvas');
+      await QRCode.toCanvas(canvas, data.brcode, { width: 180, margin: 1, color: { dark: '#000', light: '#fff' } });
+
+      document.getElementById('pix-copia-cola').value = data.brcode;
+      document.getElementById('etapa-loading').style.display = 'none';
+      document.getElementById('etapa-qr').style.display      = 'block';
+
+    } catch (err) {
+      document.getElementById('etapa-loading').style.display = 'none';
+      document.getElementById('erro-msg').textContent        = err.message;
+      document.getElementById('etapa-erro').style.display    = 'block';
+    }
+  }
+
+  // ── Copiar código Pix
+  document.getElementById('btn-copiar').addEventListener('click', () => {
+    const val = document.getElementById('pix-copia-cola').value;
+    navigator.clipboard.writeText(val).then(() => {
+      const btn = document.getElementById('btn-copiar');
+      btn.textContent = '✓ Copiado!';
+      setTimeout(() => btn.textContent = 'Copiar', 2000);
+    });
+  });
+
+  // ── FAQ toggle
   document.querySelectorAll('.faq-q').forEach(q => {
     q.addEventListener('click', () => {
       const item = q.parentElement;

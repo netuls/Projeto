@@ -871,176 +871,181 @@
   </div>
 </footer>
 
-<!-- libs -->
-<script>
-// ── QR Code gerado 100% localmente, sem CDN ──────────────────────
-// Algoritmo simplificado: usa a API de imagem do Google Charts (HTTPS, sem JS externo)
-function mostrarQRCode(texto) {
-  const canvas = document.getElementById('qr-canvas');
-  const url = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(texto);
-  canvas.innerHTML = '<img src="' + url + '" width="180" height="180" style="display:block;" onerror="usarFallbackQR()">';
-}
 
-// Fallback: mostra o código textual caso a imagem falhe
-function usarFallbackQR() {
-  const code = document.getElementById('pix-copia-cola').value;
-  document.getElementById('qr-canvas').innerHTML =
-    '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px;padding:8px;font-size:9px;word-break:break-all;color:#333;text-align:center;">' +
-    'Use o código Pix abaixo para pagar</div>';
-}
-</script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  const app = initializeApp({ apiKey:"AIzaSyDTmLtAfc1qNNqTi-LAaTeVm5Eb-GywrwY", authDomain:"projeto-hor.firebaseapp.com", projectId:"projeto-hor", storageBucket:"projeto-hor.firebasestorage.app", messagingSenderId:"1021955246820", appId:"1:1021955246820:web:05ba412bfd0cec48b9baf1" });
-  const db = getFirestore(app);
-  window._db = db; window._col = collection; window._add = addDoc; window._ts = serverTimestamp; window._fbReady = true;
-</script>
-
-<!-- ── MODAL PIX ─────────────────────────────────────────────────── -->
-<div id="pix-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
-  <div style="background:#1a1a26;border:1px solid rgba(255,92,0,0.3);border-radius:16px;width:100%;max-width:460px;overflow:hidden;position:relative;max-height:90vh;overflow-y:auto;">
-
-    <!-- Cabeçalho -->
-    <div style="background:rgba(255,92,0,0.1);border-bottom:1px solid rgba(255,92,0,0.2);padding:1.2rem 1.8rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;">
+<!-- ── MODAL PIX ──────────────────────────────────────────────── -->
+<div id="pix-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#1a1a26;border:1px solid rgba(255,92,0,0.4);border-radius:16px;width:100%;max-width:460px;overflow:hidden;max-height:92vh;overflow-y:auto;">
+    <div style="background:rgba(255,92,0,0.12);border-bottom:1px solid rgba(255,92,0,0.2);padding:1.2rem 1.8rem;display:flex;justify-content:space-between;align-items:center;">
       <div>
         <p id="modal-titulo" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#f0f0f8;letter-spacing:0.05em;">Pague com Pix</p>
         <p style="font-size:0.75rem;color:#8888aa;font-weight:600;">Método PROJETO — <strong style="color:#ff5c00;">R$ 0,01</strong></p>
       </div>
-      <button id="fechar-modal" style="background:none;border:none;color:#8888aa;font-size:1.5rem;cursor:pointer;">✕</button>
+      <button onclick="fecharModal()" style="background:none;border:none;color:#8888aa;font-size:1.8rem;cursor:pointer;line-height:1;">✕</button>
     </div>
 
-    <!-- ETAPA 1: QR Code -->
+    <!-- ETAPA 1: QR -->
     <div id="etapa-qr" style="padding:2rem 1.8rem;text-align:center;">
       <p style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;margin-bottom:1rem;">Escaneie com o app do seu banco</p>
-      <div style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:1.2rem;"><div id="qr-canvas"></div></div>
+      <div style="background:#fff;border-radius:12px;padding:14px;display:inline-block;margin-bottom:1.2rem;">
+        <div id="qr-img-wrap"></div>
+      </div>
       <p style="font-size:0.8rem;font-weight:700;color:#8888aa;margin-bottom:0.5rem;">Ou copie o código Pix:</p>
       <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
-        <input id="pix-copia-cola" readonly style="flex:1;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.7rem 1rem;color:#f0f0f8;font-size:0.7rem;font-family:monospace;outline:none;">
-        <button id="btn-copiar" style="background:rgba(255,92,0,0.2);border:1px solid rgba(255,92,0,0.4);border-radius:6px;padding:0.7rem 1rem;color:#ff5c00;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer;white-space:nowrap;">Copiar</button>
+        <input id="pix-copia-cola" readonly style="flex:1;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.7rem 1rem;color:#f0f0f8;font-size:0.65rem;font-family:monospace;outline:none;">
+        <button id="btn-copiar" onclick="copiarPix()" style="background:rgba(255,92,0,0.2);border:1px solid rgba(255,92,0,0.4);border-radius:6px;padding:0.7rem 1rem;color:#ff5c00;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer;white-space:nowrap;">Copiar</button>
       </div>
-      <button id="btn-ja-paguei" style="width:100%;background:#ff5c00;color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;margin-bottom:0.8rem;">✅ Já realizei o pagamento</button>
-      <p style="font-size:0.7rem;color:#8888aa;font-weight:600;">🔒 Pix seguro · Valor fixo de R$0,01 · Nubank</p>
+      <button onclick="irParaForm()" style="width:100%;background:#ff5c00;color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;margin-bottom:0.8rem;">✅ Já realizei o pagamento</button>
+      <p style="font-size:0.7rem;color:#8888aa;font-weight:600;">🔒 Pix direto no Nubank · R$0,01</p>
     </div>
 
-    <!-- ETAPA 2: Formulário -->
+    <!-- ETAPA 2: Form -->
     <div id="etapa-form" style="display:none;padding:2rem 1.8rem;">
-      <p style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;margin-bottom:0.5rem;">Quase lá! 🎉</p>
+      <p style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;margin-bottom:0.4rem;">Quase lá! 🎉</p>
       <p style="font-size:0.9rem;font-weight:700;color:#f0f0f8;margin-bottom:1.5rem;">Preencha seus dados para receber o acesso:</p>
       <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div>
-          <label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;display:block;margin-bottom:0.4rem;">Nome completo</label>
-          <input id="cad-nome" type="text" placeholder="João da Silva" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;">
-        </div>
-        <div>
-          <label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;display:block;margin-bottom:0.4rem;">E-mail</label>
-          <input id="cad-email" type="email" placeholder="joao@email.com" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;">
-        </div>
-        <div>
-          <label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#ff5c00;display:block;margin-bottom:0.4rem;">WhatsApp</label>
-          <input id="cad-wpp" type="tel" placeholder="(85) 99999-9999" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;">
-        </div>
+        <div><label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#ff5c00;display:block;margin-bottom:0.4rem;">Nome completo</label><input id="cad-nome" type="text" placeholder="João da Silva" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;"></div>
+        <div><label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#ff5c00;display:block;margin-bottom:0.4rem;">E-mail</label><input id="cad-email" type="email" placeholder="joao@email.com" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;"></div>
+        <div><label style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#ff5c00;display:block;margin-bottom:0.4rem;">WhatsApp</label><input id="cad-wpp" type="tel" placeholder="(85) 99999-9999" oninput="mascaraWpp(this)" style="width:100%;background:#12121a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.8rem 1rem;color:#f0f0f8;font-family:'Nunito',sans-serif;font-size:0.95rem;outline:none;"></div>
       </div>
       <p id="cad-erro" style="display:none;color:#ff5c00;font-size:0.8rem;font-weight:700;margin-top:1rem;"></p>
-      <button id="btn-enviar-cadastro" style="margin-top:1.5rem;width:100%;background:#ff5c00;color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;">Garantir meu acesso →</button>
+      <button onclick="enviarCadastro()" id="btn-cadastro" style="margin-top:1.5rem;width:100%;background:#ff5c00;color:#fff;border:none;border-radius:6px;padding:1rem;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;">Garantir meu acesso →</button>
     </div>
 
-    <!-- ETAPA 3: Sucesso -->
+    <!-- ETAPA 3: OK -->
     <div id="etapa-ok" style="display:none;padding:3rem 1.8rem;text-align:center;">
       <div style="font-size:4rem;margin-bottom:1rem;">🎉</div>
       <p style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#00e676;letter-spacing:0.05em;margin-bottom:0.8rem;">Cadastro Confirmado!</p>
-      <p style="font-size:0.95rem;font-weight:700;color:#8888aa;line-height:1.7;">Seus dados foram recebidos.<br/>Em breve entraremos em contato pelo WhatsApp<br/>para liberar seu acesso ao curso. 🚀</p>
+      <p style="font-size:0.95rem;font-weight:700;color:#8888aa;line-height:1.7;">Seus dados foram recebidos.<br/>Em breve entraremos em contato pelo WhatsApp! 🚀</p>
     </div>
-
   </div>
 </div>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const app = initializeApp({apiKey:"AIzaSyDTmLtAfc1qNNqTi-LAaTeVm5Eb-GywrwY",authDomain:"projeto-hor.firebaseapp.com",projectId:"projeto-hor",storageBucket:"projeto-hor.firebasestorage.app",messagingSenderId:"1021955246820",appId:"1:1021955246820:web:05ba412bfd0cec48b9baf1"});
+const db=getFirestore(app);
+window._db=db;window._col=collection;window._add=addDoc;window._ts=serverTimestamp;window._fbReady=true;
+</script>
 
 <script>
-  function gerarBRCode() {
-    const chave="07147590317",nome="METODO PROJETO",cidade="FORTALEZA",valor="0.01",desc="MetodoPROJETO";
-    function campo(id,v){v=String(v);return id+String(v.length).padStart(2,'0')+v;}
-    const ma=campo("00","BR.GOV.BCB.PIX")+campo("01",chave);
-    const p=campo("00","01")+campo("26",ma)+campo("52","0000")+campo("53","986")+campo("54",valor)+campo("58","BR")+campo("59",nome.slice(0,25))+campo("60",cidade.slice(0,15))+campo("62",campo("05",desc.slice(0,25)))+"6304";
-    let crc=0xFFFF;
-    for(let i=0;i<p.length;i++){crc^=p.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?(crc<<1)^0x1021:crc<<1;}
-    return p+(crc&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
-  }
+// ── Pix BRCode (padrão BACEN EMV) ──────────────────────────────────
+function gerarBRCode(){
+  var chave='07147590317',nome='METODO PROJETO',cidade='FORTALEZA',valor='0.01',desc='MetodoPROJETO';
+  function f(id,v){v=String(v);var l=v.length;return id+(l<10?'0'+l:String(l))+v;}
+  var ma=f('00','BR.GOV.BCB.PIX')+f('01',chave);
+  var p=f('00','01')+f('26',ma)+f('52','0000')+f('53','986')+f('54',valor)+f('58','BR')+f('59',nome.slice(0,25))+f('60',cidade.slice(0,15))+f('62',f('05',desc.slice(0,25)))+'6304';
+  var crc=0xFFFF;
+  for(var i=0;i<p.length;i++){crc^=p.charCodeAt(i)<<8;for(var j=0;j<8;j++)crc=(crc&0x8000)?(crc<<1)^0x1021:crc<<1;}
+  return p+(crc&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+}
 
-  let qrGerado=false;
-  function mostrarEtapa(id){
-    ['etapa-qr','etapa-form','etapa-ok'].forEach(e=>{
-      document.getElementById(e).style.display=e===id?'block':'none';
-    });
-  }
-  function gerarQR() {
-    const brcode = gerarBRCode();
-    document.getElementById('pix-copia-cola').value = brcode;
-    mostrarQRCode(brcode);
-    qrGerado = true;
-  }
+// ── QR via Google Charts API (imagem PNG simples) ───────────────────
+function mostrarQR(texto){
+  var wrap=document.getElementById('qr-img-wrap');
+  var encoded=encodeURIComponent(texto);
+  // Usando chart.googleapis.com — API pública e gratuita
+  var src='https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl='+encoded+'&choe=UTF-8';
+  wrap.innerHTML='<img src="'+src+'" width="180" height="180" alt="QR Code Pix" style="display:block;" onerror="this.parentNode.innerHTML=\'<div style=\\\"width:180px;height:50px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#333;text-align:center;\\\">Use o código copia e cola abaixo</div>\'">';
+}
 
-  function abrirModal(){
-    mostrarEtapa('etapa-qr');
-    document.getElementById('modal-titulo').textContent='Pague com Pix';
-    document.getElementById('pix-modal').style.display='flex';
-    if(!qrGerado){ gerarQR(); }
-  }
-
-  document.querySelectorAll('.btn-main,.card-btn,.cta-main-btn,.nav-cta').forEach(btn=>{
-    btn.addEventListener('click',e=>{e.preventDefault();abrirModal();});
-  });
-  document.getElementById('fechar-modal').addEventListener('click',()=>{ document.getElementById('pix-modal').style.display='none'; });
-  document.getElementById('pix-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)e.currentTarget.style.display='none'; });
-
-  document.getElementById('btn-ja-paguei').addEventListener('click',()=>{
-    mostrarEtapa('etapa-form');
-    document.getElementById('modal-titulo').textContent='Seus Dados';
-  });
-
-  document.getElementById('cad-wpp').addEventListener('input',e=>{
-    let v=e.target.value.replace(/\D/g,'').slice(0,11);
-    if(v.length>6)v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
-    else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'($1) $2');
-    e.target.value=v;
-  });
-
-  document.getElementById('btn-copiar').addEventListener('click',()=>{
-    navigator.clipboard.writeText(document.getElementById('pix-copia-cola').value).then(()=>{
-      const btn=document.getElementById('btn-copiar');
+// ── Copiar Pix com fallback para seleção manual ─────────────────────
+window.copiarPix=function(){
+  var input=document.getElementById('pix-copia-cola');
+  var btn=document.getElementById('btn-copiar');
+  var texto=input.value;
+  if(!texto)return;
+  // Tenta clipboard moderno
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(texto).then(function(){
       btn.textContent='✓ Copiado!';
-      setTimeout(()=>btn.textContent='Copiar',2000);
-    });
-  });
+      setTimeout(function(){btn.textContent='Copiar';},2500);
+    }).catch(function(){usarFallbackCopy(input,btn);});
+  } else {
+    usarFallbackCopy(input,btn);
+  }
+};
 
-  document.getElementById('btn-enviar-cadastro').addEventListener('click', async ()=>{
-    const nome=document.getElementById('cad-nome').value.trim();
-    const email=document.getElementById('cad-email').value.trim();
-    const wpp=document.getElementById('cad-wpp').value.trim();
-    const erro=document.getElementById('cad-erro');
-    if(!nome||!email||!wpp){erro.textContent='⚠️ Preencha todos os campos.';erro.style.display='block';return;}
-    erro.style.display='none';
-    const btn=document.getElementById('btn-enviar-cadastro');
-    btn.textContent='Salvando...';btn.disabled=true;
-    let t=0;
-    while(!window._fbReady&&t++<30)await new Promise(r=>setTimeout(r,200));
-    try{
-      await window._add(window._col(window._db,'clientes'),{nome,email,whatsapp:wpp,valor:'R$0,01',curso:'Método PROJETO',data:window._ts()});
-      mostrarEtapa('etapa-ok');
-      document.getElementById('modal-titulo').textContent='Tudo Certo!';
-    }catch(err){
-      erro.textContent='❌ Erro ao salvar. Tente novamente.';erro.style.display='block';
-      btn.textContent='Garantir meu acesso →';btn.disabled=false;
-    }
-  });
+function usarFallbackCopy(input,btn){
+  input.removeAttribute('readonly');
+  input.select();
+  input.setSelectionRange(0,99999);
+  try{
+    document.execCommand('copy');
+    btn.textContent='✓ Copiado!';
+    setTimeout(function(){btn.textContent='Copiar';},2500);
+  }catch(e){
+    btn.textContent='Selecione e copie';
+  }
+  input.setAttribute('readonly','');
+}
 
-  document.querySelectorAll('.faq-q').forEach(q=>{
-    q.addEventListener('click',()=>{
-      const item=q.parentElement;
-      const isOpen=item.classList.contains('open');
-      document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+// ── Modal ───────────────────────────────────────────────────────────
+var pixPronto=false;
+window.fecharModal=function(){document.getElementById('pix-modal').style.display='none';};
+window.irParaForm=function(){
+  document.getElementById('etapa-qr').style.display='none';
+  document.getElementById('etapa-form').style.display='block';
+  document.getElementById('modal-titulo').textContent='Seus Dados';
+};
+window.mascaraWpp=function(el){
+  var v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>6)v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'($1) $2');
+  el.value=v;
+};
+
+function abrirModal(){
+  document.getElementById('etapa-qr').style.display='block';
+  document.getElementById('etapa-form').style.display='none';
+  document.getElementById('etapa-ok').style.display='none';
+  document.getElementById('modal-titulo').textContent='Pague com Pix';
+  document.getElementById('pix-modal').style.display='flex';
+  if(!pixPronto){
+    var brcode=gerarBRCode();
+    document.getElementById('pix-copia-cola').value=brcode;
+    mostrarQR(brcode);
+    pixPronto=true;
+  }
+}
+
+window.enviarCadastro=async function(){
+  var nome=document.getElementById('cad-nome').value.trim();
+  var email=document.getElementById('cad-email').value.trim();
+  var wpp=document.getElementById('cad-wpp').value.trim();
+  var erro=document.getElementById('cad-erro');
+  if(!nome||!email||!wpp){erro.textContent='⚠️ Preencha todos os campos.';erro.style.display='block';return;}
+  erro.style.display='none';
+  var btn=document.getElementById('btn-cadastro');
+  btn.textContent='Salvando...';btn.disabled=true;
+  var t=0;
+  while(!window._fbReady&&t++<30)await new Promise(function(r){setTimeout(r,200);});
+  try{
+    await window._add(window._col(window._db,'clientes'),{nome:nome,email:email,whatsapp:wpp,valor:'R$0,01',curso:'Método PROJETO',data:window._ts()});
+    document.getElementById('etapa-form').style.display='none';
+    document.getElementById('etapa-ok').style.display='block';
+    document.getElementById('modal-titulo').textContent='Tudo Certo!';
+  }catch(e){
+    erro.textContent='❌ Erro ao salvar. Tente novamente.';erro.style.display='block';
+    btn.textContent='Garantir meu acesso →';btn.disabled=false;
+  }
+};
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.btn-main,.card-btn,.cta-main-btn,.nav-cta').forEach(function(b){
+    b.addEventListener('click',function(e){e.preventDefault();abrirModal();});
+  });
+  document.getElementById('pix-modal').addEventListener('click',function(e){
+    if(e.target===e.currentTarget)fecharModal();
+  });
+  document.querySelectorAll('.faq-q').forEach(function(q){
+    q.addEventListener('click',function(){
+      var item=q.parentElement,isOpen=item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open');});
       if(!isOpen)item.classList.add('open');
     });
   });
+});
+</script>
 </body>
 </html>

@@ -134,7 +134,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const app = initializeApp({
     apiKey: "AIzaSyDTmLtAfc1qNNqTi-LAaTeVm5Eb-GywrwY",
@@ -169,14 +169,22 @@
   };
 
   async function carregarClientes() {
+    const body = document.getElementById('tabela-body');
     try {
-      const q = query(collection(db, 'clientes'), orderBy('data', 'desc'));
-      const snap = await getDocs(q);
+      // Sem orderBy para evitar necessidade de índice no Firestore
+      const snap = await getDocs(collection(db, 'clientes'));
       todosClientes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Ordenar localmente por data (mais recente primeiro)
+      todosClientes.sort(function(a, b) {
+        const ta = a.data ? a.data.seconds : 0;
+        const tb = b.data ? b.data.seconds : 0;
+        return tb - ta;
+      });
       atualizarStats();
       renderizar(todosClientes);
     } catch(e) {
-      document.getElementById('tabela-body').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar. Verifique as regras do Firestore.</p></div>';
+      console.error('Erro Firebase:', e);
+      body.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p style="color:#ff5c00;font-weight:700;">Erro: ' + e.message + '</p><p style="margin-top:0.5rem;font-size:0.8rem;color:#8888aa;">Verifique as regras do Firestore no console do Firebase.<br/>A regra de leitura deve ser: <code style="color:#ff5c00;">allow read: if true;</code></p></div>';
     }
   }
 

@@ -872,7 +872,7 @@
 </footer>
 
 <!-- libs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -957,17 +957,28 @@
       document.getElementById(e).style.display=e===id?'block':'none';
     });
   }
+  function gerarQR() {
+    if (typeof QRCode === 'undefined') {
+      // lib ainda carregando, tenta de novo em 100ms
+      setTimeout(gerarQR, 100);
+      return;
+    }
+    const brcode = gerarBRCode();
+    document.getElementById('pix-copia-cola').value = brcode;
+    document.getElementById('qr-canvas').innerHTML = '';
+    new QRCode(document.getElementById('qr-canvas'), {
+      text: brcode, width: 180, height: 180,
+      colorDark: "#000000", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    qrGerado = true;
+  }
+
   function abrirModal(){
     mostrarEtapa('etapa-qr');
     document.getElementById('modal-titulo').textContent='Pague com Pix';
     document.getElementById('pix-modal').style.display='flex';
-    if(!qrGerado){
-      const brcode=gerarBRCode();
-      document.getElementById('pix-copia-cola').value=brcode;
-      document.getElementById('qr-canvas').innerHTML='';
-      new QRCode(document.getElementById('qr-canvas'),{text:brcode,width:180,height:180,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M});
-      qrGerado=true;
-    }
+    if(!qrGerado){ gerarQR(); }
   }
 
   document.querySelectorAll('.btn-main,.card-btn,.cta-main-btn,.nav-cta').forEach(btn=>{
